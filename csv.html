@@ -4,16 +4,37 @@
 <meta charset=utf-8 />
 <title>Point in polygon</title>
 <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-
+<script src='https://api.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
 <script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
 <script src='papaparse.min.js'></script>
 
 <input type="file" name="filename" id="filename">
-<div id="data"></div>
+<table>
+  <thead>
+    <tr>
+      <th>Query</th>
+      <th>Returned</th>
+    </tr>
+  </thead>
+  <tbody id="data"></tbody>
+</table>
 
 <script>
 
 var address = '';
+var htmlResults = '';
+L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
+var geocoder = L.mapbox.geocoder('mapbox.places');
+
+function renderResult(err, data) {
+  //console.log(data.results.features[0].place_name);
+  htmlResults += '<td>' + data.results.features[0].place_name + '</td></tr>';
+  console.log(htmlResults);
+  /*console.log(data);
+  console.log(data.results.features[0].center[1]);
+  console.log(data.results.features[0].center[0]);*/
+}
+
 $("#filename").change(function(e) {
   $("#filename").parse( {
     config: {
@@ -22,12 +43,25 @@ $("#filename").change(function(e) {
       },*/
       header: true,
       step: function(results, parser) {
-        console.log("Row data:", results.data);
-        console.log(results.data[0].City)
+        // console.log("Row data:", results.data);
+        // console.log(results.data[0].City)
         address = results.data[0]['Street Address'] + ', ' + results.data[0].City + ', ' + results.data[0].State + ' ' + results.data[0].Zip;
         //console.log(results.data.city);
-        $('#data').append('<p>' + address + '</p>');
-        console.log("Row errors:", results.errors);
+        htmlResults += '<tr><td>' + address + '</td>';
+
+        geocoder.query(address, function (err, data) {
+          //console.log(data.results.features[0].place_name);
+          htmlResults += '<td>' + data.results.features[0].place_name + '</td></tr>';
+          console.log(htmlResults);
+          /*console.log(data);
+          console.log(data.results.features[0].center[1]);
+          console.log(data.results.features[0].center[0]);*/
+        });
+        //console.log("Row errors:", results.errors);
+      },
+      complete: function(results, file) {
+        $('#data').append(htmlResults);
+        console.log(htmlResults);
       }
     }, 
     complete: function() {
@@ -36,6 +70,8 @@ $("#filename").change(function(e) {
   });
   return false;
 });
+
+
 
 /*$("#filename").change(function(e) {
 
