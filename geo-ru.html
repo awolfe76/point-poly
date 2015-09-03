@@ -47,22 +47,22 @@ L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki
 var geocoder = L.mapbox.geocoder('mapbox.places');
 map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.8282, -98.5795], 4);
 
-var layer = L.mapbox.tileLayer('feomike.7g9tqpvi').addTo(map);
+var myLayer = L.mapbox.tileLayer('feomike.7g9tqpvi').addTo(map);
 
 var myGridLayer = L.mapbox.gridLayer('feomike.7g9tqpvi').addTo(map)
   .on('ready', function() {
     var tileJSON = myGridLayer.getTileJSON();
     console.log(tileJSON);
   });
-//var myGridControl = L.mapbox.gridControl(myGridLayer).addTo(map);
-
-
-
-
 
 var state = document.getElementById('state');
 var holdStates;
 var states;
+
+function latLong(data) {
+  console.log('gridData');
+  console.log(data);
+}
 
 var marker = L.marker({
   icon: L.mapbox.marker.icon({
@@ -70,15 +70,17 @@ var marker = L.marker({
   })
 }).on('add', function(e) {
   states = L.geoJson(holdStates);
-  //console.log('latlong ' + myGridLayer.getData(this.getLatLng));
-  var pipLayer = leafletPip.pointInLayer(this.getLatLng(), states, true);
-  if (pipLayer.length) {
+  console.log('latlong ' + this.getLatLng());
+  myGridLayer.getData(this.getLatLng(), latLong);
+  //console.log('latlong ' + myGridLayer.getData(this.getLatLng()));
+  var layer = leafletPip.pointInLayer(this.getLatLng(), states, true);
+  if (layer.length) {
     console.log('test');
-    console.log(pipLayer[0].feature.properties.NAME);
-    state.innerHTML = '<strong>' + pipLayer[0].feature.properties.NAME + '</strong>';
+    console.log(layer[0].feature.properties.NAME);
+    state.innerHTML = '<strong>RURAL</strong>';
   } else {
     console.log('test2');
-    state.innerHTML = '<strong>no ru</strong>';
+    state.innerHTML = '<strong>NOT RURAL</strong>';
   }
 });
 
