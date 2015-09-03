@@ -54,7 +54,7 @@ var myGridLayer = L.mapbox.gridLayer('feomike.7g9tqpvi').addTo(map)
     var tileJSON = myGridLayer.getTileJSON();
     console.log(tileJSON);
   });
-//var myGridControl = L.mapbox.gridControl(myGridLayer).addTo(map);
+var myGridControl = L.mapbox.gridControl(myGridLayer).addTo(map);
 
 
 
@@ -82,14 +82,14 @@ var marker = L.marker({
   }
 });
 
-$.ajax({
+/*$.ajax({
   url: 'ru.geojson',
   dataType: 'json',
   success: function load(data) {
     holdStates = data;
     L.geoJson(data).addTo(map);
   }
-});
+});*/
 
 function showMap(err, data) {
   map.removeLayer(marker);
