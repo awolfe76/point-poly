@@ -22,14 +22,28 @@
 <script>
 
 var address = '';
-var htmlResults = '';
+
+//var htmlResults = '';
 L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
 var geocoder = L.mapbox.geocoder('mapbox.places');
 
 function renderResult(err, data) {
+  console.log(data);
+  var query = '';
   //console.log(data.results.features[0].place_name);
-  htmlResults += '<td>' + data.results.features[0].place_name + '</td></tr>';
-  console.log(htmlResults);
+
+  // get query string, loop through data.results.query
+  $.each(data.results.query, function(index, value){
+    query = query + ' ' + value;
+  });
+
+  // append full results
+  $('#data').append('<tr><td>'
+    + query + '</td>'
+    + '<td>' + data.results.features[0].place_name + '</td></tr>');
+
+    // += '<td>' + data.results.features[0].place_name + '</td></tr>';
+  //console.log(htmlResults);
   /*console.log(data);
   console.log(data.results.features[0].center[1]);
   console.log(data.results.features[0].center[0]);*/
@@ -47,21 +61,14 @@ $("#filename").change(function(e) {
         // console.log(results.data[0].City)
         address = results.data[0]['Street Address'] + ', ' + results.data[0].City + ', ' + results.data[0].State + ' ' + results.data[0].Zip;
         //console.log(results.data.city);
-        htmlResults += '<tr><td>' + address + '</td>';
+        //htmlResults += '<tr><td>' + address + '</td>';
 
-        geocoder.query(address, function (err, data) {
-          //console.log(data.results.features[0].place_name);
-          htmlResults += '<td>' + data.results.features[0].place_name + '</td></tr>';
-          console.log(htmlResults);
-          /*console.log(data);
-          console.log(data.results.features[0].center[1]);
-          console.log(data.results.features[0].center[0]);*/
-        });
+        geocoder.query(address, renderResult);
         //console.log("Row errors:", results.errors);
       },
       complete: function(results, file) {
-        $('#data').append(htmlResults);
-        console.log(htmlResults);
+        //$('#data').append(htmlResults);
+        console.log("Complete!");
       }
     }, 
     complete: function() {

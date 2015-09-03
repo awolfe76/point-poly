@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Point in polygon</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://api.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+</style>
+</head>
+<body>
+
+<style>
+#map {
+  top: 100px;
+}
+</style>
+
+<!--
+  This example requires jQuery to load the file with AJAX.
+  You can use another tool for AJAX.
+
+  This pulls the file airports.csv, converts into into GeoJSON by autodetecting
+  the latitude and longitude columns, and adds it to the map.
+
+  Another CSV that you use will also need to contain latitude and longitude
+  columns, and they must be similarly named.
+-->
+
+<script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-pip/v0.0.2/leaflet-pip.js'></script>
+<div>
+  <form id="geocode">
+    <input type="text" name="address" id="address" />
+    <input class="btn" type="submit" value="Get Lat/Long!" />
+  </form>
+  <div id="state" style="float:right; background:black; color:white;"></div>
+</div>
+<div id='map'></div>
+
+<script>
+L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
+
+var geocoder = L.mapbox.geocoder('mapbox.places');
+map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.8282, -98.5795], 4);
+
+var state = document.getElementById('state');
+var holdStates;
+var states;
+
+var marker = L.marker({
+  icon: L.mapbox.marker.icon({
+      'marker-color': '#f86767'
+  })
+}).on('add', function(e) {
+  states = L.geoJson(holdStates);
+  var layer = leafletPip.pointInLayer(this.getLatLng(), states, true);
+  if (layer.length) {
+    console.log('test');
+    console.log(layer[0].feature.properties.name);
+    state.innerHTML = '<strong>' + layer[0].feature.properties.name + '</strong>';
+  } else {
+    console.log('test2');
+    state.innerHTML = '<strong>no state</strong>';
+  }
+});
+
+$.ajax({
+  url: 'us-states.geojson',
+  dataType: 'json',
+  success: function load(data) {
+    holdStates = data;
+    L.geoJson(data).addTo(map);
+  }
+});
+
+function showMap(err, data) {
+  map.removeLayer(marker);
+  console.log(data);
+  console.log(data.results.features[0].center[1]);
+  console.log(data.results.features[0].center[0]);
+  marker.setLatLng([data.results.features[0].center[1], data.results.features[0].center[0]]);
+  map.addLayer(marker);
+}
+
+// on submit
+$('#geocode').submit(function(event) {
+    geocoder.query($('#address').val(), showMap);
+    return false;
+});
+
+// on keypress of enter
+$('#address').keypress(function(e) {
+  if (e.which == 13) {
+    geocoder.query($('#address').val(), showMap);
+    return false;
+  }
+});
+</script>
+
+</body>
+</html>
