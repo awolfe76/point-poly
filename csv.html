@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Point in polygon</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+<script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+<script src='papaparse.min.js'></script>
+
+<input type="file" name="filename" id="filename">
+<div id="data"></div>
+
+<script>
+
+var address = '';
+$("#filename").change(function(e) {
+  $("#filename").parse( {
+    config: {
+      /*complete: function(results, file) {
+        console.log("This file done:", file, results);
+      },*/
+      header: true,
+      step: function(results, parser) {
+        console.log("Row data:", results.data);
+        console.log(results.data[0].City)
+        address = results.data[0]['Street Address'] + ', ' + results.data[0].City + ', ' + results.data[0].State + ' ' + results.data[0].Zip;
+        //console.log(results.data.city);
+        $('#data').append('<p>' + address + '</p>');
+        console.log("Row errors:", results.errors);
+      }
+    }, 
+    complete: function() {
+      console.log("All files done!");
+    }
+  });
+  return false;
+});
+
+/*$("#filename").change(function(e) {
+
+
+  var ext = $("input#filename").val().split(".").pop().toLowerCase();
+
+  if($.inArray(ext, ["csv"]) == -1) {
+    alert('Upload CSV');
+    return false;
+  }
+
+  if (e.target.files != undefined) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      console.log(this.result);
+      var lines = this.result.split('\\n');
+      console.log(lines);
+      var csvval=e.target.result.split("\n");
+      console.log(csvval);
+      var csvvalue=csvval[0].split(",");
+      var inputrad="";
+      for(var i=0; i<csvvalue.length; i++) {
+        var temp = csvvalue[i];
+        var inputrad = inputrad+" "+temp;
+      }
+      $("#csvimporthint").html('<div>' + inputrad + '</div>');
+      //$("#csvimporthinttitle").show();
+    };
+    reader.readAsText(e.target.files.item(0));
+  }
+
+  return false;
+});*/
+</script>
+
+</body>
+</html>
