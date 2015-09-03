@@ -47,13 +47,13 @@ L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki
 var geocoder = L.mapbox.geocoder('mapbox.places');
 map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.8282, -98.5795], 4);
 
-var myLayer = L.mapbox.tileLayer('feomike.7g9tqpvi').addTo(map);
+/*var myLayer = L.mapbox.tileLayer('feomike.7g9tqpvi').addTo(map);
 
 var myGridLayer = L.mapbox.gridLayer('feomike.7g9tqpvi').addTo(map)
   .on('ready', function() {
     var tileJSON = myGridLayer.getTileJSON();
     console.log(tileJSON);
-  });
+  });*/
 
 var state = document.getElementById('state');
 var holdStates;
@@ -71,7 +71,7 @@ var marker = L.marker({
 }).on('add', function(e) {
   states = L.geoJson(holdStates);
   console.log('latlong ' + this.getLatLng());
-  myGridLayer.getData(this.getLatLng(), latLong);
+  // myGridLayer.getData(this.getLatLng(), latLong);
   //console.log('latlong ' + myGridLayer.getData(this.getLatLng()));
   var layer = leafletPip.pointInLayer(this.getLatLng(), states, true);
   if (layer.length) {
