@@ -50,15 +50,35 @@ map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.8282, -98.5795], 4);
 var layer = L.mapbox.tileLayer('feomike.7g9tqpvi').addTo(map);
 
 var myGridLayer = L.mapbox.gridLayer('feomike.7g9tqpvi').addTo(map)
-  .on('ready', function() {
-    var tileJSON = myGridLayer.getTileJSON();
-    console.log(tileJSON);
+  .on('click', function(e) {
+    console.log('made it');
+    console.log(e);
+    var latlng = L.latLng(e.lat, e.lng);
+    myGridLayer.getData(latlng, latLong);
+    //var tileJSON = myGridLayer.getTileJSON();
+    //console.log('tileJSON');
+    //console.log(tileJSON);
   });
+
 var myGridControl = L.mapbox.gridControl(myGridLayer).addTo(map);
 
 
 
 
+
+function latLong(e) {
+  console.log('gridData');
+  //console.log(e);
+  if (!e) {
+    state.innerHTML = '<strong>NOT RURAL</strong>';
+  } else {
+    if (e.base_1_pct <= 20) {
+      state.innerHTML = '<strong><= 20 (' + e.base_1_pct + ')</strong>';
+    } else {
+      state.innerHTML = '<strong>> 20 (' + e.base_1_pct + ')</strong>';
+    }
+  }
+}
 
 var state = document.getElementById('state');
 var holdStates;
@@ -69,9 +89,13 @@ var marker = L.marker({
       'marker-color': '#f86767'
   })
 }).on('add', function(e) {
-  states = L.geoJson(holdStates);
+  console.log('e');
+  console.log(e);
+  //states = L.geoJson(holdStates);
+  myGridLayer.fireEvent('click', this.getLatLng());
+  // myGridLayer.getData(this.getLatLng(), latLong);
   //console.log('latlong ' + myGridLayer.getData(this.getLatLng));
-  var pipLayer = leafletPip.pointInLayer(this.getLatLng(), states, true);
+  /*var pipLayer = leafletPip.pointInLayer(this.getLatLng(), states, true);
   if (pipLayer.length) {
     console.log('test');
     console.log(pipLayer[0].feature.properties.NAME);
@@ -79,7 +103,7 @@ var marker = L.marker({
   } else {
     console.log('test2');
     state.innerHTML = '<strong>no ru</strong>';
-  }
+  }*/
 });
 
 /*$.ajax({
