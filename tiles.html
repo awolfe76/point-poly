@@ -69,7 +69,7 @@ var myGridControl = L.mapbox.gridControl(myGridLayer).addTo(map);
 function latLong(e) {
   console.log('gridData');
   //console.log(e);
-  if (!e) {
+  if (!e.base_1_pct) {
     state.innerHTML = '<strong>NOT RURAL</strong>';
   } else {
     if (e.base_1_pct <= 20) {

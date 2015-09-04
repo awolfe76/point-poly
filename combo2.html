@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Point in polygon</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://api.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
+<script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+<script src='papaparse.min.js'></script>
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+</style>
+</head>
+<body>
+
+<style>
+#map {
+  height: 400px;
+  top: 100px;
+  width: 50%;
+  /*display: none;*/
+}
+.group:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+</style>
+
+<div style="height:100px; padding: 10px;">
+  <form id="geocode">
+    <input type="text" name="address" id="address" />
+    <input class="btn" type="submit" value="Get Lat/Long!" />
+    <input type="file" name="filename" id="filename">
+  </form>
+  <div id="state" style="float:right; background:black; color:white;"></div>
+</div>
+<div class="group">
+  <div style="float: left; width: 50%;">
+    <div id='map'></div>
+  </div>
+  <div style="float:right; width: 50%;">
+    <table>
+      <thead>
+        <tr>
+          <th>Query</th>
+          <th>Returned</th>
+          <th>Rural?</th>
+        </tr>
+      </thead>
+      <tbody id="data"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+var html = '';
+
+// create map
+L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
+map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.8282, -98.5795], 4);
+
+// setup geocoder
+var geocoder = L.mapbox.geocoder('mapbox.places');
+
+// div to update
+var state = document.getElementById('state');
+
+// tile and grid
+var layer = L.mapbox.tileLayer('feomike.7g9tqpvi').addTo(map);
+var myGridLayer = L.mapbox.gridLayer('feomike.7g9tqpvi').addTo(map)
+  .on('click', function(e) {
+    var latlng = L.latLng(e.lat, e.lng);
+    myGridLayer.getData(latlng, latLong);
+  });
+
+// create marker
+var marker = L.marker({
+  icon: L.mapbox.marker.icon( {
+    'marker-color': '#f86767'
+  })
+}).on('add', function(e) {
+  // when we add a marker fire a click event with lat/long of marker
+  myGridLayer.fireEvent('click', this.getLatLng());
+});
+
+var rural = '';
+
+// call back for myGridLayer .getData
+function latLong(e) {
+  //console.log(e);
+  rural = '';
+  // if no data from grid
+  if (!e) {
+    rural = 'NOT RURAL';
+  } else { // have data
+    if (e.base_1_pct <= 20) {
+      rural = '< 20 (' + e.base_1_pct + ')';
+    } else {
+      rural = '> 20 (' + e.base_1_pct + ')';
+    }
+  }
+}
+
+// call back for geocoder
+function showMap(err, data) {
+  // remove marker
+  map.removeLayer(marker);
+  // set up the marker
+  marker.setLatLng([data.results.features[0].center[1], data.results.features[0].center[0]]);
+  // add marker to map
+  map.addLayer(marker);
+}
+
+// on submit
+$('#geocode').submit(function(event) {
+  $('#data').html('');
+  geocoder.query($('#address').val(), renderResult);
+  return false;
+});
+
+// on keypress of enter
+$('#address').keypress(function(e) {
+  $('#data').html('');
+  if (e.which == 13) {
+    geocoder.query($('#address').val(), renderResult);
+    return false;
+  }
+});
+
+function renderResult(err, data) {
+  // reset tableRow each time
+  tableRow = '';
+  
+  var query = '';
+  $.each(data.results.query, function(index, value){
+    query = query + ' ' + value;
+  });
+
+  var latitude;
+
+  // remove marker
+  map.removeLayer(marker);
+  // set up the marker
+  marker.setLatLng([data.results.features[0].center[1], data.results.features[0].center[0]]);
+  // add marker to map
+  map.addLayer(marker);
+
+  tableRow = tableRow + '<tr><td>' + query + '</td>'
+    + '<td>' + data.results.features[0].place_name + '</td>'
+    + '<td>' + rural + '</td></tr>';
+    $('#data').append(tableRow);
+}
+
+$("#filename").change(function(e) {
+  // clear data table each time
+  $('#data').html('');
+
+  // parse the csv
+  $("#filename").parse( {
+    config: {
+      header: true,
+      step: function(results, parser) {
+        address = results.data[0]['Street Address'] + ', ' + results.data[0].City + ', ' + results.data[0].State + ' ' + results.data[0].Zip;
+        geocoder.query(address, renderResult);
+      },
+      complete: function(results, file) {
+        console.log("Complete!");
+      }
+    }, 
+    complete: function() {
+      console.log("All files done!");
+    }
+  });
+  return false;
+});
+</script>
+
+</body>
+</html>
