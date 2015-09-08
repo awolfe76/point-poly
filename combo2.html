@@ -68,6 +68,22 @@ var geocoder = L.mapbox.geocoder('mapbox.places');
 // div to update
 var state = document.getElementById('state');
 
+// call back for myGridLayer .getData
+function latLong(e) {
+  //console.log(e);
+  rural = '';
+  // if no data from grid
+  if (!e) {
+    rural = 'NOT RURAL';
+  } else { // have data
+    if (e.base_1_pct <= 20) {
+      rural = '< 20 (' + e.base_1_pct + ')';
+    } else {
+      rural = '> 20 (' + e.base_1_pct + ')';
+    }
+  }
+}
+
 // tile and grid
 var layer = L.mapbox.tileLayer('feomike.7g9tqpvi').addTo(map);
 var myGridLayer = L.mapbox.gridLayer('feomike.7g9tqpvi').addTo(map)
@@ -88,32 +104,6 @@ var marker = L.marker({
 
 var rural = '';
 
-// call back for myGridLayer .getData
-function latLong(e) {
-  //console.log(e);
-  rural = '';
-  // if no data from grid
-  if (!e) {
-    rural = 'NOT RURAL';
-  } else { // have data
-    if (e.base_1_pct <= 20) {
-      rural = '< 20 (' + e.base_1_pct + ')';
-    } else {
-      rural = '> 20 (' + e.base_1_pct + ')';
-    }
-  }
-}
-
-// call back for geocoder
-function showMap(err, data) {
-  // remove marker
-  map.removeLayer(marker);
-  // set up the marker
-  marker.setLatLng([data.results.features[0].center[1], data.results.features[0].center[0]]);
-  // add marker to map
-  map.addLayer(marker);
-}
-
 // on submit
 $('#geocode').submit(function(event) {
   $('#data').html('');
@@ -131,6 +121,9 @@ $('#address').keypress(function(e) {
 });
 
 function renderResult(err, data) {
+  if (err) {
+    console.log(data.results.features[0].place_name) ;
+  }
   // reset tableRow each time
   tableRow = '';
   
