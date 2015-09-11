@@ -90,9 +90,11 @@ td {
     <table id="rural" style="border-width: 1px;" width="100%">
       <thead>
         <tr>
-          <th>Query</th>
-          <th>Return</th>
-          <th>Rural?</th>
+          <th>Address Entered</th>
+          <th>Address Identfied</th>
+          <th>County</th>
+          <th>Census Block</th>
+          <th>Rural or Underserved?</th>
         </tr>
       </thead>
       <tbody class="data"></tbody>
@@ -102,9 +104,11 @@ td {
     <table id="notRural" style="border-width: 1px;" width="100%">
       <thead>
         <tr>
-          <th>Query</th>
-          <th>Return</th>
-          <th>Rural?</th>
+          <th>Address Entered</th>
+          <th>Address Identfied</th>
+          <th>County</th>
+          <th>Census Block</th>
+          <th>Rural or Underserved?</th>
         </tr>
       </thead>
       <tbody class="data"></tbody>
@@ -114,8 +118,11 @@ td {
     <table id="notFound" style="border-width: 1px;" width="100%">
       <thead>
         <tr>
-          <th>Query</th>
-          <th>Return</th>
+          <th>Address Entered</th>
+          <th>Address Identfied</th>
+          <th>County</th>
+          <th>Census Block</th>
+          <th>Rural or Underserved?</th>
         </tr>
       </thead>
       <tbody class="data"></tbody>
@@ -166,11 +173,15 @@ function callback(data) {
   // nothing found
   if (data.result.addressMatches.length === 0) {
     $('#notFound tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
-        + '<td>Address Not Found</td></tr>');
+        + '<td>Address not identfied</td>'
+        + '<td>-</td>'
+        + '<td>-</td>'
+        + '<td>-</td></tr>');
     // add to count and update UI
     notFoundCnt ++;
     $('#notFoundCnt').html(notFoundCnt);
   } else {
+    console.log(data);
     // get fips from result (state and county)
     var fipsCode = data.result.addressMatches[0].geographies['Census Blocks'][0].STATE + data.result.addressMatches[0].geographies['Census Blocks'][0].COUNTY;
     // load fips (counties that are rural)
@@ -199,12 +210,16 @@ function callback(data) {
         $('#notRuralCnt').html(notRuralCnt);
         $('#notRural tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
           + '<td><a class="jsLoadMap" data-lat="' + data.result.addressMatches[0].coordinates.x + '" data-lon="' + data.result.addressMatches[0].coordinates.y + '" data-oid="loc-' + data.result.addressMatches[0].geographies['Census Blocks'][0].OID + '">' + data.result.addressMatches[0].matchedAddress + '</a></td>'
+          + '<td>' + data.result.addressMatches[0].geographies['Census Blocks'][0].COUNTY + '</td>'
+          + '<td>' + data.result.addressMatches[0].geographies['Census Blocks'][0].BLOCK + '</td>'
           + '<td>No</td></tr>');
       } else {
         ruralCnt ++;
         $('#ruralCnt').html(ruralCnt);
         $('#rural tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
           + '<td><a class="jsLoadMap" data-lat="' + data.result.addressMatches[0].coordinates.x + '" data-lon="' + data.result.addressMatches[0].coordinates.y + '" data-oid="loc-' + data.result.addressMatches[0].geographies['Census Blocks'][0].OID + '">' + data.result.addressMatches[0].matchedAddress + '</a></td>'
+          + '<td>' + data.result.addressMatches[0].geographies['Census Blocks'][0].COUNTY + '</td>'
+          + '<td>' + data.result.addressMatches[0].geographies['Census Blocks'][0].BLOCK + '</td>'
           + '<td>Yes</td></tr>');
       }
     });
