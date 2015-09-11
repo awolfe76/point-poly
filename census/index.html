@@ -181,7 +181,6 @@ function callback(data) {
     notFoundCnt ++;
     $('#notFoundCnt').html(notFoundCnt);
   } else {
-    console.log(data);
     // get fips from result (state and county)
     var fipsCode = data.result.addressMatches[0].geographies['Census Blocks'][0].STATE + data.result.addressMatches[0].geographies['Census Blocks'][0].COUNTY;
     // load fips (counties that are rural)
@@ -226,33 +225,20 @@ function callback(data) {
   }
 }
 
-// found in list
-// getRuralUrban('1240 Fairview Road, Grantsville, MD 21536');
-// urban
-// getRuralUrban('1325 J St, Sacramento, CA');
-// rural
-// getRuralUrban('7132 9th Ave, Tahoma, CA');
-
 // on submit
 $('#geocode').submit(function(e) {
-  //$('#data').html('');
-  //html = html + $('#address').val();
   getRuralUrban($('#address').val());
   return false;
 });
 
 // on keypress of enter
 $('#address').keypress(function(e) {
-  //$('#data').html('');
-  //html = html + $('#address').val();
   if (e.which == 13) {
     getRuralUrban($('#address').val());
     return false;
   }
 });
 
-// var mapCount = 0;
-// var mapID = {};
 $('body').on('click', 'a.jsLoadMap', function(e) {
   e.preventDefault();
 
@@ -261,7 +247,6 @@ $('body').on('click', 'a.jsLoadMap', function(e) {
   // check if oid already exists
   if ($('#loc-' + oid).length) {
     // remove the map and container
-    //map.remove();
     $('#loc-' + oid).remove();
   } else {
     // get the lat/lon
@@ -275,7 +260,6 @@ $('body').on('click', 'a.jsLoadMap', function(e) {
     var latlng = L.latLng(lon, lat);
     map = L.mapbox.map('loc-' + oid, 'cfpb.k55b27gd', { center: latlng }).setView(latlng,15);
     var marker = L.marker(latlng).addTo(map);
-   // mapCount++;
   }
 });
 
@@ -288,9 +272,6 @@ $("#filename").change(function(e) {
     config: {
       header: false,
       step: function(results, parser) {
-        //console.log(results);
-        // address = results.data[0]['Street Address'] + ', ' + results.data[0].City + ', ' + results.data[0].State + ' ' + results.data[0].Zip;
-        //html = html + '<tr><td>' + results.data[0][0] + '</td>';
         getRuralUrban(results.data[0][0]);
       },
       complete: function(results, file) {
