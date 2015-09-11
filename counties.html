@@ -59,7 +59,7 @@
 var html = '';
 
 // create map
-L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
+L.mapbox.accessToken = 'pk.eyJ1IjoiYXdvbGZlNzYiLCJhIjoiMzg3eW9BWSJ9.ury6Rc3SfR-hUX59x3A6aQ';
 map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.72097288332441, -78.778018838501], 15);
 
 // setup geocoder
@@ -81,10 +81,11 @@ function latLong(e) {
     rural = 'US BLOCK'
   }
 }
+console.log(map);
 
 // tile and grid
-var layer = L.mapbox.tileLayer('feomike.6cwel8fr').addTo(map);
-var myGridLayer = L.mapbox.gridLayer('feomike.6cwel8fr').addTo(map)
+var layer = L.mapbox.tileLayer('awolfe76.2fe4f475').addTo(map);
+var myGridLayer = L.mapbox.gridLayer('awolfe76.2fe4f475').addTo(map)
   .on('click', function(e) {
     var latlng = L.latLng(e.lat, e.lng);
     myGridLayer.getData(latlng, latLong);

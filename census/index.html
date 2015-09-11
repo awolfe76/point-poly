@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Point in polygon</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+<script src='https://api.mapbox.com/mapbox.js/v2.2.1/mapbox.js'></script>
+<link href='https://api.mapbox.com/mapbox.js/v2.2.1/mapbox.css' rel='stylesheet' />
+<script src='../papaparse.min.js'></script>
+</head>
+<body>
+
+<style>
+.group:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+    max-width: 100%;
+    width: 100%;
+}
+
+th {
+    font-weight: bold;
+    text-align: left;
+    vertical-align: bottom;
+}
+
+th,
+td {
+    border-right: 1px solid;
+    border-bottom: 1px solid;
+    line-height: inherit;
+    padding: 3px;
+    &:last-child {
+        border-right-width: 0;
+    }
+}
+
+td:empty {
+    background-color: #eee;
+}
+
+thead th {
+    border-bottom-width: 3px;
+}
+tbody th {
+    vertical-align: top;
+}
+
+td {
+    vertical-align: top;
+}
+.jsLoadMap {
+  color: blue;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.map {
+  height: 200px;
+  width: 100%;
+}
+</style>
+
+<div style="height:100px; padding: 10px;">
+  <form id="geocode">
+    <input type="text" name="address" id="address" />
+    <input class="btn" type="submit" value="Get Lat/Long!" />
+    <input type="file" name="filename" id="filename">
+  </form>
+  <div id="state" style="float:right; background:black; color:white;"></div>
+</div>
+<div class="group" style="text-align:center;">
+  <div style="float:left; width: 33%;"><strong>Rural</strong></div>
+  <div style="float:left; width: 33%;"><strong>Not</strong></div>
+  <div style="float:left; width: 33%;"><strong>Cant find</strong></div>
+</div>
+<div class="group" style="text-align:center; margin-bottom: 40px;">
+  <div id="cntRural" style="float:left; width: 33%; font-size: 32px;">0</div>
+  <div id="cntNot" style="float:left; width: 33%; font-size: 32px;">0</div>
+  <div id="cntCant" style="float:left; width: 33%; font-size: 32px;">0</div>
+</div>
+<div class="group" style="padding-top: 40px; border-top: 1px solid #ddd;">
+  <div style="float:right; width: 100%;">
+    <h1>Rural</h1>
+    <table id="rural" style="border-width: 1px;" width="100%">
+      <thead>
+        <tr>
+          <th>Query</th>
+          <th>Return</th>
+          <th>Rural?</th>
+        </tr>
+      </thead>
+      <tbody class="data"></tbody>
+    </table>
+
+    <h1 style="margin-top: 40px;">Not Rural</h1>
+    <table id="notRural" style="border-width: 1px;" width="100%">
+      <thead>
+        <tr>
+          <th>Query</th>
+          <th>Return</th>
+          <th>Rural?</th>
+        </tr>
+      </thead>
+      <tbody class="data"></tbody>
+    </table>
+
+    <h1 style="margin-top: 40px;">Not Found</h1>
+    <table id="notFound" style="border-width: 1px;" width="100%">
+      <thead>
+        <tr>
+          <th>Query</th>
+          <th>Return</th>
+        </tr>
+      </thead>
+      <tbody class="data"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
+var lastHTML = '';
+var fips;
+var query = '';
+
+/*http://geocoding.geo.census.gov/geocoder/geographies/address?street=4600+Silver+Hill+Rd&city=Suitland&state=MD&benchmark=Public_AR_Census2010&vintage=Census2010_Census2010&format=jsonp&callback=callback
+http://geocoding.geo.census.gov/geocoder/geographies/address?callback=callb…ic_AR_Census201&vintage=Census2010_Census2010&format=jsonp&_=1441829946852*/
+
+// http://geocoding.geo.census.gov/geocoder/locations/address?street=4600+Silver+Hill+Rd&city=Suitland&state=MD&zip=20746&benchmark=Public_AR_Census2010&format=json
+function getRuralUrban(address) {
+  query = address;
+  $('tbody').html('');
+  $('#cntCant').html('0');
+  $('#cntNot').html('0');
+  $('#cntRural').html('0');
+  cntRural = 0;
+  cntNot = 0;
+  cntCant = 0;
+
+  // parse address
+  // replace all commas and spaces with +
+  sendAddress = address.replace(/ /g, '+');
+  sendAddress = sendAddress.replace(/,/g, '+');
+  //console.log(sendAddress);
+
+  $.ajax({
+    url: 'http://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?address=' + sendAddress + '&benchmark=Public_AR_Census2010&vintage=Census2010_Census2010&layers=68,70,14&format=jsonp&callback=callback',
+    dataType: 'jsonp',
+    async: true
+  })
+  .fail(function(jqXHR, textStatus) {
+    console.log(textStatus);
+  });
+}
+var cntCant = 0;
+var cntNot = 0;
+var cntRural = 0;
+function callback(data) {
+  console.log(data);
+
+  
+  //console.log(data.result.addressMatches[0].geographies['Census Blocks'][0].UR);
+  var check = 'Not rural';
+  if (data.result.addressMatches.length === 0) {
+    $('#notFound tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
+        + '<td>Address Not Found</td></tr>');
+    cntCant ++;
+    $('#cntCant').html(cntCant);
+  } else {
+    var fipsCode = data.result.addressMatches[0].geographies['Census Blocks'][0].STATE + data.result.addressMatches[0].geographies['Census Blocks'][0].COUNTY;
+    // load fips
+    // loop through fips looking for fips from data
+    $.getJSON('fips.json', function(fips) {
+      //html = html + '<td>' + data.result.addressMatches[0].matchedAddress + '</td>';
+      $.each(fips.fips, function(key, val) {
+        if (val[0] === fipsCode) {
+          check = 'County';
+          // console.log(fipsCode + ' and ' + val[0]);
+          //html = html + '<td>IS</td></tr>';
+          return false;
+        }
+      });
+
+      // if it wasn't in the list
+      // we have to check for urban
+      if (check === 'Not rural') {
+        //if (data.result.addressMatches[0].geographies['Urban Clusters'] == null || ) 
+        if (data.result.addressMatches[0].geographies['Urban Clusters'] == null || data.result.addressMatches[0].geographies['Urban Clusters'].length != 0) {
+          console.log('Urban Clusters');
+          //html = html + '<td>IS</td></tr>';
+          check = 'UC';
+          //console.log(data.result.addressMatches[0].geographies['Urban Clusters'][0]);
+        } else if (data.result.addressMatches[0].geographies['Urbanized Areas'] == null || data.result.addressMatches[0].geographies['Urbanized Areas'].length !=0) {
+          console.log('Urbanized Areas');
+          //html = html + '<td>IS</td></tr>';
+          check = 'UA';
+          
+          //console.log(data.result.addressMatches[0].geographies['Urbanized Areas'][0].UA);
+        }
+      }
+
+      if (check === 'Not rural') {
+        cntNot ++;
+        $('#cntNot').html(cntNot);
+        $('#notRural tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
+          + '<td><a class="jsLoadMap" data-lat="' + data.result.addressMatches[0].coordinates.x + '" data-lon="' + data.result.addressMatches[0].coordinates.y + '" data-oid="loc-' + data.result.addressMatches[0].geographies['Census Blocks'][0].OID + '">' + data.result.addressMatches[0].matchedAddress + '</a></td>'
+          + '<td>' + check + /*fipsCode +*/ '</td></tr>');
+      } else {
+        cntRural ++;
+        $('#cntRural').html(cntRural);
+        $('#rural tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
+          + '<td><a class="jsLoadMap" data-lat="' + data.result.addressMatches[0].coordinates.x + '" data-lon="' + data.result.addressMatches[0].coordinates.y + '" data-oid="loc-' + data.result.addressMatches[0].geographies['Census Blocks'][0].OID + '">' + data.result.addressMatches[0].matchedAddress + '</a></td>'
+          + '<td>' + check + /*fipsCode +*/ '</td></tr>');
+      }
+    });
+  }
+}
+
+// found in list
+// getRuralUrban('1240 Fairview Road, Grantsville, MD 21536');
+// urban
+// getRuralUrban('1325 J St, Sacramento, CA');
+// rural
+// getRuralUrban('7132 9th Ave, Tahoma, CA');
+
+// on submit
+$('#geocode').submit(function(e) {
+  //$('#data').html('');
+  //html = html + $('#address').val();
+  getRuralUrban($('#address').val());
+  return false;
+});
+
+// on keypress of enter
+$('#address').keypress(function(e) {
+  //$('#data').html('');
+  //html = html + $('#address').val();
+  if (e.which == 13) {
+    getRuralUrban($('#address').val());
+    return false;
+  }
+});
+
+// var mapCount = 0;
+// var mapID = {};
+$('body').on('click', 'a.jsLoadMap', function(e) {
+  e.preventDefault();
+
+  var oid = $(this).data('oid');
+
+  // check if oid already exists
+  if ($('#loc-' + oid).length) {
+    // remove the map and container
+    //map.remove();
+    $('#loc-' + oid).remove();
+  } else {
+    // get the lat/lon
+    var lat = $(this).data('lat');
+    var lon = $(this).data('lon');
+    
+    // append the map container
+    $(this).parent().append('<div class="map" id="loc-' + oid + '"></div>');
+
+    // create the map and add marker
+    var latlng = L.latLng(lon, lat);
+    map = L.mapbox.map('loc-' + oid, 'cfpb.k55b27gd', { center: latlng }).setView(latlng,15);
+    var marker = L.marker(latlng).addTo(map);
+   // mapCount++;
+  }
+});
+
+$("#filename").change(function(e) {
+  // clear data table each time
+  $('#data').html('');
+
+  // parse the csv
+  $("#filename").parse( {
+    config: {
+      header: false,
+      step: function(results, parser) {
+        //console.log(results);
+        // address = results.data[0]['Street Address'] + ', ' + results.data[0].City + ', ' + results.data[0].State + ' ' + results.data[0].Zip;
+        //html = html + '<tr><td>' + results.data[0][0] + '</td>';
+        getRuralUrban(results.data[0][0]);
+      },
+      complete: function(results, file) {
+        console.log("Complete!");
+      }
+    }, 
+    complete: function() {
+      console.log("All files done!");
+    }
+  });
+  return false;
+});
+</script>
+
+</body>
+</html>

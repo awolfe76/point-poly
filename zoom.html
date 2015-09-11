@@ -60,7 +60,7 @@ var html = '';
 
 // create map
 L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
-map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.72097288332441, -78.778018838501], 15);
+map = L.mapbox.map('map', 'cfpb.k55b27gd').setView([39.73226104075993, -78.76866329345705],11);
 
 // setup geocoder
 var geocoder = L.mapbox.geocoder('mapbox.places');
@@ -72,7 +72,7 @@ var count = 1;
 
 // call back for myGridLayer .getData
 function latLong(e) {
-  console.log(e);
+  console.log('test');
   rural = '';
   // if no data from grid
   if (!e) {
@@ -83,15 +83,16 @@ function latLong(e) {
 }
 
 // tile and grid
-var layer = L.mapbox.tileLayer('feomike.6cwel8fr').addTo(map);
+var layer = L.mapbox.tileLayer('feomike.6cwel8fr', {opacity: .25}).addTo(map);
 var myGridLayer = L.mapbox.gridLayer('feomike.6cwel8fr').addTo(map)
   .on('click', function(e) {
+    console.log(e.lat);
     var latlng = L.latLng(e.lat, e.lng);
     myGridLayer.getData(latlng, latLong);
   });
 
 // create marker
-var marker = L.marker({
+/*var marker = L.marker({
   icon: L.mapbox.marker.icon( {
     'marker-color': '#f86767'
   })
@@ -99,8 +100,32 @@ var marker = L.marker({
   // when we add a marker fire a click event with lat/long of marker
   myGridLayer.fireEvent('click', this.getLatLng());
 });
-
+*/
 var rural = '';
+//var myLat = 39.717209753499056;
+//var myLong = -78.78411281738283;
+
+var myDiff = .0015;
+
+//var myLocation = [-78.78514278564455, 39.72882858024647];
+
+var myLocation = {lon: -78.76866329345705, lat: 39.73226104075993};
+
+for (i = 0; i < 50; i++) {
+  //if (i != 0) {
+    
+  //}
+  //myLocation.myLat = myLat;
+  //console.log(myLocation);
+  (function(i) {
+    window.setTimeout(function(){
+      newLat = myLocation.lat - myDiff;
+      myLocation.lat = newLat;
+      geocoder.reverseQuery(myLocation, renderResult);
+    }, 3000);
+  })(i);
+  
+}
 
 // on submit
 $('#geocode').submit(function(event) {
@@ -119,15 +144,15 @@ $('#address').keypress(function(e) {
 });
 
 function renderResult(err, data) {
-  console.log(data);
+  //console.log(data);
   if (err) {
-    console.log(data.results.features[0].place_name) ;
+    console.log(data.features[0].place_name) ;
   }
   // reset tableRow each time
   tableRow = '';
   
   var query = '';
-  $.each(data.results.query, function(index, value){
+  $.each(data.query, function(index, value){
     if (value != 'undefined') {
       query = query + ' ' + value;
     }
@@ -135,12 +160,12 @@ function renderResult(err, data) {
 
   var latitude;
 
-  var marker = L.marker([data.results.features[0].center[1], data.results.features[0].center[0]])
+  var marker = L.marker([data.features[0].center[1], data.features[0].center[0]])
     .on('add', function(e) {
       // when we add a marker fire a click event with lat/long of marker
       myGridLayer.fireEvent('click', this.getLatLng());
     })
-    .bindPopup(query)
+    .bindPopup(data.features[0].place_name)
     .addTo(map);
 
   /*// remove marker
@@ -149,9 +174,9 @@ function renderResult(err, data) {
   marker.setLatLng([data.results.features[0].center[1], data.results.features[0].center[0]]);
   // add marker to map
   map.addLayer(marker);*/
-
+  console.log(rural);
   tableRow = tableRow + '<tr><td>' + query + '</td>'
-    + '<td>' + data.results.features[0].place_name + '</td>'
+    + '<td>' + data.features[0].place_name + '</td>'
     + '<td>' + rural + ' - ' + count + '</td></tr>';
     $('#data').append(tableRow);
 

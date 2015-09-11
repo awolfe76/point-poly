@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Point in polygon</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+<script src='https://code.jquery.com/jquery-1.11.0.min.js'></script>
+<script src='../papaparse.min.js'></script>
+</head>
+<body>
+
+<style>
+.group:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+</style>
+
+<div style="height:100px; padding: 10px;">
+  <form id="geocode">
+    <input type="text" name="address" id="address" />
+    <input class="btn" type="submit" value="Get Lat/Long!" />
+    <input type="file" name="filename" id="filename">
+  </form>
+  <div id="state" style="float:right; background:black; color:white;"></div>
+</div>
+<div class="group">
+  <div style="float: left; width: 50%;">
+    <div id='map'></div>
+  </div>
+  <div style="float:right; width: 50%;">
+    <table width="100%">
+      <thead>
+        <tr>
+          <th>data</th>
+        </tr>
+      </thead>
+      <tbody id="data"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+
+
+$("#filename").change(function(e) {
+  // clear data table each time
+  $('#data').html('');
+
+  // parse the csv
+  $("#filename").parse( {
+    config: {
+      header: false,
+      step: function(results, parser) {
+        //address = results.data[0]['Street Address'] + ', ' + results.data[0].City + ', ' + results.data[0].State + ' ' + results.data[0].Zip;
+        //geocoder.query(address, renderResult);
+        //console.log(results);
+        //console.log(results.data[0][1].indexOf('AZ'));
+        var az;
+        var html = '';
+        $.each(results.data[0][0].split(/\|/), function (i, val) {
+          if (i == 1) {
+            if (val.indexOf('AZ') !== -1) {
+              az = true;
+            } else {
+              az = false;
+              html = '<tr><td>' + val;
+            }
+            //$('#data').append('<tr><td>' + val + '</td></tr>');
+          }
+          if (i === 7 && az === false) {
+            html = html + ' ' + val;
+          }
+          if (i === 8 && az === false) {
+            html = html + ' ' + val;
+          }
+          if (i === 9 && az === false) {
+            html = html + ' ' + val + '</td></tr>';
+            $('#data').append(html);
+            html = '';
+          }
+        });
+      },
+      complete: function(results, file) {
+        console.log("Complete!");
+      }
+    }, 
+    complete: function() {
+      console.log("All files done!");
+    }
+  });
+  return false;
+});
+</script>
+
+</body>
+</html>
