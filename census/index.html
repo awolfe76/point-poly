@@ -80,9 +80,9 @@ td {
   <div style="float:left; width: 33%;"><strong>Cant find</strong></div>
 </div>
 <div class="group" style="text-align:center; margin-bottom: 40px;">
-  <div id="cntRural" style="float:left; width: 33%; font-size: 32px;">0</div>
-  <div id="cntNot" style="float:left; width: 33%; font-size: 32px;">0</div>
-  <div id="cntCant" style="float:left; width: 33%; font-size: 32px;">0</div>
+  <div id="ruralCnt" style="float:left; width: 33%; font-size: 32px;">0</div>
+  <div id="notRuralCnt" style="float:left; width: 33%; font-size: 32px;">0</div>
+  <div id="notFoundCnt" style="float:left; width: 33%; font-size: 32px;">0</div>
 </div>
 <div class="group" style="padding-top: 40px; border-top: 1px solid #ddd;">
   <div style="float:right; width: 100%;">
@@ -125,30 +125,31 @@ td {
 
 <script>
 L.mapbox.accessToken = 'pk.eyJ1IjoiY29tcHV0ZWNoIiwiYSI6InMyblMya3cifQ.P8yppesHki5qMyxTc2CNLg';
-var lastHTML = '';
+
 var fips;
-var query = '';
+var notFoundCnt = 0;
+var notRuralCnt = 0;
+var ruralCnt = 0;
+var tableRow = '';
+var sendAddress;
 
-/*http://geocoding.geo.census.gov/geocoder/geographies/address?street=4600+Silver+Hill+Rd&city=Suitland&state=MD&benchmark=Public_AR_Census2010&vintage=Census2010_Census2010&format=jsonp&callback=callback
-http://geocoding.geo.census.gov/geocoder/geographies/address?callback=callb…ic_AR_Census201&vintage=Census2010_Census2010&format=jsonp&_=1441829946852*/
-
-// http://geocoding.geo.census.gov/geocoder/locations/address?street=4600+Silver+Hill+Rd&city=Suitland&state=MD&zip=20746&benchmark=Public_AR_Census2010&format=json
 function getRuralUrban(address) {
-  query = address;
+  // reset things
   $('tbody').html('');
-  $('#cntCant').html('0');
-  $('#cntNot').html('0');
-  $('#cntRural').html('0');
-  cntRural = 0;
-  cntNot = 0;
-  cntCant = 0;
+  $('#notFoundCnt').html('0');
+  $('#notRuralCnt').html('0');
+  $('#ruralCnt').html('0');
+  ruralCnt = 0;
+  notRuralCnt = 0;
+  notFoundCnt = 0;
+  tableRow = '';
 
   // parse address
   // replace all commas and spaces with +
-  sendAddress = address.replace(/ /g, '+');
-  sendAddress = sendAddress.replace(/,/g, '+');
-  //console.log(sendAddress);
-
+  sendAddress = address.replace(/, /g, '+');
+  sendAddress = sendAddress.replace(/ /g, '+');
+  
+  // api call
   $.ajax({
     url: 'http://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?address=' + sendAddress + '&benchmark=Public_AR_Census2010&vintage=Census2010_Census2010&layers=68,70,14&format=jsonp&callback=callback',
     dataType: 'jsonp',
@@ -158,65 +159,53 @@ function getRuralUrban(address) {
     console.log(textStatus);
   });
 }
-var cntCant = 0;
-var cntNot = 0;
-var cntRural = 0;
-function callback(data) {
-  console.log(data);
 
-  
-  //console.log(data.result.addressMatches[0].geographies['Census Blocks'][0].UR);
-  var check = 'Not rural';
+function callback(data) {
+  var rural = false;
+
+  // nothing found
   if (data.result.addressMatches.length === 0) {
     $('#notFound tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
         + '<td>Address Not Found</td></tr>');
-    cntCant ++;
-    $('#cntCant').html(cntCant);
+    // add to count and update UI
+    notFoundCnt ++;
+    $('#notFoundCnt').html(notFoundCnt);
   } else {
+    // get fips from result (state and county)
     var fipsCode = data.result.addressMatches[0].geographies['Census Blocks'][0].STATE + data.result.addressMatches[0].geographies['Census Blocks'][0].COUNTY;
-    // load fips
+    // load fips (counties that are rural)
     // loop through fips looking for fips from data
     $.getJSON('fips.json', function(fips) {
-      //html = html + '<td>' + data.result.addressMatches[0].matchedAddress + '</td>';
       $.each(fips.fips, function(key, val) {
+        // if result is in fips its rural
+        // stop, no need to continue
         if (val[0] === fipsCode) {
-          check = 'County';
-          // console.log(fipsCode + ' and ' + val[0]);
-          //html = html + '<td>IS</td></tr>';
+          rural = true;
           return false;
         }
       });
 
-      // if it wasn't in the list
-      // we have to check for urban
-      if (check === 'Not rural') {
-        //if (data.result.addressMatches[0].geographies['Urban Clusters'] == null || ) 
-        if (data.result.addressMatches[0].geographies['Urban Clusters'] == null || data.result.addressMatches[0].geographies['Urban Clusters'].length != 0) {
-          console.log('Urban Clusters');
-          //html = html + '<td>IS</td></tr>';
-          check = 'UC';
-          //console.log(data.result.addressMatches[0].geographies['Urban Clusters'][0]);
-        } else if (data.result.addressMatches[0].geographies['Urbanized Areas'] == null || data.result.addressMatches[0].geographies['Urbanized Areas'].length !=0) {
-          console.log('Urbanized Areas');
-          //html = html + '<td>IS</td></tr>';
-          check = 'UA';
-          
-          //console.log(data.result.addressMatches[0].geographies['Urbanized Areas'][0].UA);
+      // if it wasn't in the fips list
+      // we have check against urban clusters and areas
+      // if both are null or array length 0 its rural
+      if (rural === false) {
+        if ((data.result.addressMatches[0].geographies['Urban Clusters'] === null || data.result.addressMatches[0].geographies['Urban Clusters'].length === 0) && (data.result.addressMatches[0].geographies['Urbanized Areas'] === null || data.result.addressMatches[0].geographies['Urbanized Areas'].length === 0)) {
+          rural = true;
         }
       }
 
-      if (check === 'Not rural') {
-        cntNot ++;
-        $('#cntNot').html(cntNot);
+      if (rural === false) {
+        notRuralCnt ++;
+        $('#notRuralCnt').html(notRuralCnt);
         $('#notRural tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
           + '<td><a class="jsLoadMap" data-lat="' + data.result.addressMatches[0].coordinates.x + '" data-lon="' + data.result.addressMatches[0].coordinates.y + '" data-oid="loc-' + data.result.addressMatches[0].geographies['Census Blocks'][0].OID + '">' + data.result.addressMatches[0].matchedAddress + '</a></td>'
-          + '<td>' + check + /*fipsCode +*/ '</td></tr>');
+          + '<td>No</td></tr>');
       } else {
-        cntRural ++;
-        $('#cntRural').html(cntRural);
+        ruralCnt ++;
+        $('#ruralCnt').html(ruralCnt);
         $('#rural tbody').append('<tr><td>' + data.result.input.address.address + '</td>'
           + '<td><a class="jsLoadMap" data-lat="' + data.result.addressMatches[0].coordinates.x + '" data-lon="' + data.result.addressMatches[0].coordinates.y + '" data-oid="loc-' + data.result.addressMatches[0].geographies['Census Blocks'][0].OID + '">' + data.result.addressMatches[0].matchedAddress + '</a></td>'
-          + '<td>' + check + /*fipsCode +*/ '</td></tr>');
+          + '<td>Yes</td></tr>');
       }
     });
   }
